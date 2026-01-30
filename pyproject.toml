@@ -1,0 +1,10 @@
+[project]
+name = "finance-data-engineering-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "dbt-snowflake>=1.10.2",
+    "yfinance>=1.1.0",
+]

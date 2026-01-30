@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: bronze_data
+    database: YFINANCE_DB
+    schema: BRONZE
+    tables:
+      - name: raw_stock_data  # The table Snowpipe is loading into
