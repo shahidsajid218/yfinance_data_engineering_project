@@ -6,5 +6,10 @@ dist/
 wheels/
 *.egg-info
 
+logs/
+target/
+dbt_modules/
+packages/
+
 # Virtual environments
 .venv
