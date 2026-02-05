@@ -36,14 +36,15 @@ The pipeline is synchronized with NYSE trading hours (14:30 - 21:00 GMT, Monday-
 ### **4. Business Intelligence (Power BI)**
 * **Dynamic UX:** Developed **DAX-driven contextual titles** that update automatically based on the selected Ticker and timeframe slicers.
 * **Analytics-Ready Gold Layer:** The dashboard connects directly to the Gold layer, providing high-performance visualization of technical indicators (RSI, Moving Averages) without requiring complex in-report transformations.
-![Power BI report](powerBI report.png)
+<img width="1260" height="356" alt="image" src="https://github.com/user-attachments/assets/43cb294d-b7c1-4ad9-bd9a-5fb18ba767c7" />
+
 
 ## 🏗️ Architecture
 
 [yfinance API] 
       │
       ▼
-[AWS Lambda] ───► [AWS CloudWatch Logs]                                            ![Project Architecture](project architecture.png)
+[AWS Lambda] ───► [AWS CloudWatch Logs]                                            
       │
       ▼
 [AWS S3 (Landing)] ───► [AWS SNS/SQS] ───► [Snowpipe]
@@ -53,6 +54,9 @@ The pipeline is synchronized with NYSE trading hours (14:30 - 21:00 GMT, Monday-
                                               │
                                               ▼
                                         [Power BI Dashboard]
+
+
+<img width="1536" height="1024" alt="project archiectecture" src="https://github.com/user-attachments/assets/97a4e806-3d24-4a61-bc7f-bfd8f69e3aeb" />
 
 
 
