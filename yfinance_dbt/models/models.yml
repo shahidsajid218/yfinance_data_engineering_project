@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: silver_stock_prices  # Matches your silver_stock_prices.sql filename
+    description: "Cleaned and partitioned intraday price data from Yahoo Finance"
+    columns:
+      - name: ticker
+        description: "The stock symbol (e.g., AAPL, TSLA)"
+        tests:
+          - not_null
+      - name: open_price
+        description: "The current trading price at the interval"
+        tests:
+          - not_null
+      - name: volume
+        description: "Number of shares traded during the interval"
+        tests:
+          - not_null
+
+  - name: stock_metrics  # Matches your analytics-ready gold model
+    description: "Aggregated financial metrics including RSI and Moving Averages"
+    columns:
+      - name: ticker
+        tests:
+          - not_null
+      - name: moving_avg_50
+        description: "50-day Moving Average of the stock price"
+        tests:
+          - not_null
+
+
+  - name: stocks_rsi  # Ensure this matches your .sql filename
+    description: "Analytics-ready table calculating Relative Strength Index (RSI)"
+    columns:
+      - name: ticker
+        tests:
+          - not_null
+          - relationships:
+              to: ref('silver_stock_prices')
+              field: ticker
+
+      - name: rsi
+        description: "The 14-period RSI value"
+        tests:
+          - not_null
+          # RSI is a bounded oscillator (0 to 100)
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100

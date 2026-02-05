@@ -1,5 +1,6 @@
 {{ config(materialized='table',
-         schema='gold')
+         schema='gold',
+         tags=['gold'])
 }}
 
 WITH base_data AS (

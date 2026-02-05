@@ -2,3 +2,19 @@
 target/
 dbt_packages/
 logs/
+/venv_dbt/
+.venv_dbt/
+.dbt_venv/
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+/yfinance_dbt/dbt_project.yml
+/yfinance_dbt/profiles.yml
+/
+
+
+
+
+
+
+

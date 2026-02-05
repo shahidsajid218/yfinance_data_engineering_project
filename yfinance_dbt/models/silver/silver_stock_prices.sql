@@ -1,11 +1,15 @@
-{{
+{{ 
     config(
         materialized='incremental',
         unique_key=['ticker', 'trading_at'],
         schema='silver',
-        incremental_strategy='merge'
-    )
+        incremental_strategy='merge',
+        cluster_by=['trading_at::date'],
+        tags=['silver']
+    ) 
 }}
+
+
 
 with raw_source as (
     select 
