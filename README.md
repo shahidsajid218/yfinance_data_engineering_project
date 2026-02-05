@@ -5,30 +5,37 @@ A comprehensive, event-driven data engineering pipeline for collecting, transfor
 ## 📋 Overview
 
 This project orchestrates a complete ETL/ELT pipeline that:
-- **Extracts** real-time stock market data via **AWS Lambda** (Python).
-- **Streams** data through **AWS S3** and **Amazon SQS** for event-driven ingestion.
-- **Loads** raw data into **Snowflake** via **Snowpipe** with automated **SNS** error alerting.
+- **Extracts** stock data via **AWS Lambda** (Python) triggered by **AWS EventBridge**.
+- **Streams** data through **AWS S3** using **Hive-style partitioning** for optimized storage.
+- **Loads** data into **Snowflake** via **Snowpipe** with automated **SNS** error alerting.
 - **Transforms** data through a Medallion Architecture (**Bronze → Silver → Gold**) using **dbt**.
-- **Orchestrates** workflows with **Apache Airflow**, specifically tuned to NYSE trading hours.
+- **Visualizes** technical indicators like RSI and Moving Averages in a dynamic **Power BI** dashboard.
 
-The pipeline runs during NYSE trading hours (2:30 PM - 9:00 PM GMT, Monday-Friday) to capture intraday market movements with minimal compute waste.
+The pipeline is synchronized with NYSE trading hours (14:30 - 21:00 GMT, Monday-Friday) to capture intraday market movements while minimizing cloud compute costs.
 
-s
+
 ## 🚀 Key Engineering Features
 
-### **1. Event-Driven Ingestion**
-- Utilizes **Snowpipe** to automatically ingest data as it lands in S3.
-- Notifications are managed via **AWS SQS** to ensure no files are missed.
-- **SNS Alerting:** Integrated an outbound notification system that sends an alert to a specified SNS topic if a pipe execution fails.
+### **1. Serverless Ingestion & Event-Driven Scheduling**
+* **AWS EventBridge Scheduler:** Triggers the Python Lambda extractor on a precise Cron schedule (`14:30 – 21:00 GMT`) to align with NYSE trading hours, ensuring cost-efficient data collection without idle server overhead.
+* **S3 Hive-Style Partitioning:** The Lambda script dynamically organizes data in S3 using a `ticker=SYMBOL/year=YYYY/month=MM/day=DD/` key structure. This physical partitioning enables high-performance data pruning during the ingestion and transformation phases.
+* **Automated Snowpipe Loading:** Leverages **Snowpipe** integrated with **Amazon SQS** for real-time ingestion. Data moves from S3 into Snowflake Bronze tables within seconds of the file landing.
+* **Cloud-Native Monitoring:** Centralized logging via **Amazon CloudWatch** tracks Lambda execution health, while **AWS SNS** provides automated error notifications if Snowpipe ingestion fails.
 
-### **2. dbt Transformation Logic**
-- Implemented **Medallion Architecture** to maintain a clean data lineage.
-- **Hive Partitioning:** Optimized the Silver layer using date-based partitioning to drastically reduce Snowflake credit consumption during query execution.
-- Modular SQL development using `ref()` and `source()` functions for maintainability.
+### **2. Advanced Airflow Orchestration**
+* **Workload Coordination:** Airflow serves as the primary orchestrator, managing the dependencies between dbt transformations and data availability.
+* **Custom Market-Hour Scheduling:** DAGs are configured to respect market downtime, preventing unnecessary warehouse activations during weekends or non-trading hours.
+* **Failure Recovery:** Implemented robust retry logic and alert sensors within Airflow to ensure the pipeline recovers gracefully from API timeouts or intermittent network issues.
+* **Environment Parity:** Developed and tested within **WSL2** (Ubuntu) to ensure seamless local orchestration that mimics production Linux environments.
 
-### **3. Security & Governance**
-- Implemented the **Principle of Least Privilege (PoLP)**.
-- Dedicated roles created in Snowflake (`TRANSFORMER`, `LOADER`, `REPORT_USER`) to ensure Airflow and Power BI only have access to required schemas.
+### **3. dbt Transformation & Data Governance**
+* **Incremental Materialization:** The Silver layer uses dbt’s `incremental` strategy with a `merge` predicate. This ensures only new records are processed, drastically reducing Snowflake credit consumption.
+* **Principle of Least Privilege (PoLP):** Enforced via custom Snowflake RBAC. Distinct roles (`LOADER`, `TRANSFORMER`, `READER`) restrict access based on function, securing the data from ingestion to visualization.
+* **Data Quality Testing:** A comprehensive suite of dbt tests ensures schema integrity (Unique/Not-Null) and validates business logic (e.g., RSI oscillators staying within the 0-100 range).
+
+### **4. Business Intelligence (Power BI)**
+* **Dynamic UX:** Developed **DAX-driven contextual titles** that update automatically based on the selected Ticker and timeframe slicers.
+* **Analytics-Ready Gold Layer:** The dashboard connects directly to the Gold layer, providing high-performance visualization of technical indicators (RSI, Moving Averages) without requiring complex in-report transformations.
 
 ## 🏗️ Architecture
 
@@ -94,22 +101,24 @@ c:\Personal\Finance Data Engineering Project\
 │   ├── analyses/                      # Ad-hoc analysis queries
 │   └── target/                        # dbt compiled artifacts
 │
-├── scripts/                           # Python utility scripts
+├── scripts/                           # Python utility scripts and helpers
 │   ├── get_stock_data.py              # Stock data extraction (AWS Lambda compatible)
 │   ├── requirements.txt               # Python dependencies
-│   └── python/                        # Vendored Python packages
-│       ├── yfinance/                  # Yahoo Finance library
-│       ├── pandas/                    # Data manipulation
-│       ├── numpy/                     # Numerical computing
-│       └── [other dependencies]
+│   ├── python/                        # Vendored Python packages
+│   │   ├── yfinance/                  # Yahoo Finance library
+│   │   ├── pandas/                    # Data manipulation
+│   │   ├── numpy/                     # Numerical computing
+│   │   └── [other dependencies]
+│   └── snowflake_scripts/             # Snowflake initialization SQL scripts (execute in Snowflake Worksheets or via SnowSQL)
+│       ├── snowflake_airflow_init.sql # Airflow integration setup (SQL to run in Snowflake)
+│       ├── Snowflake_db_init.sql      # Database & schema creation (run in Snowflake)
+│       └── snowflake_dbt_init.sql     # dbt user & role setup (run in Snowflake)
 │
-└── snowflake_scripts/                 # Snowflake initialization scripts
-    ├── snowflake_airflow_init.sql     # Airflow integration setup
-    ├── Snowflake_db_init.sql          # Database & schema creation
-    └── snowflake_dbt_init.sql         # dbt user & role setup
+└── [other top-level folders]
 ```
 
 ## 🚀 Quick Start
+
 
 
 
@@ -121,6 +130,108 @@ c:\Personal\Finance Data Engineering Project\
 - **dbt** with Snowflake adapter
 - **Snowflake** account with appropriate permissions
 - **Yahoo Finance API** access (free tier)
+
+### WSL2 Development Setup (Airflow and dbt in separate venvs)
+
+The project is developed and tested on WSL2 (Ubuntu). Airflow and dbt each run in their own virtual environments: `.venv_airflow` and `.venv_dbt` respectively. Airflow will invoke the `dbt` executable directly from the dbt venv.
+
+Follow these copy-paste steps inside WSL (adjust paths and usernames):
+
+1. Clone or copy the repository into WSL for best I/O performance:
+
+```bash
+mkdir -p ~/projects
+cp -r /mnt/c/Personal/Finance\ Data\ Engineering\ Project ~/projects/finance-data-engineering
+cd ~/projects/finance-data-engineering
+```
+
+2. Install system packages:
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip git build-essential
+```
+
+3. Create separate virtualenvs for Airflow and dbt:
+
+```bash
+python3 -m venv .venv_airflow
+python3 -m venv .venv_dbt
+```
+
+4. Install and initialize Airflow (in `.venv_airflow`):
+
+```bash
+source .venv_airflow/bin/activate
+pip install --upgrade pip setuptools wheel
+# Use a matching Airflow version and constraints from the official docs
+AIRFLOW_VERSION=2.6.3
+PYTHON_VERSION=3.11
+CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
+pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
+
+export AIRFLOW_HOME="$PWD/airflow_home"
+airflow db init
+airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com
+
+# Start services (in separate terminals)
+source .venv_airflow/bin/activate
+airflow webserver -p 8080
+
+source .venv_airflow/bin/activate
+airflow scheduler
+```
+
+5. Install dbt and Snowflake adapter (in `.venv_dbt`):
+
+```bash
+source .venv_dbt/bin/activate
+pip install --upgrade pip setuptools wheel
+pip install dbt-snowflake
+which dbt
+# Example output: /home/you/projects/finance-data-engineering/.venv_dbt/bin/dbt
+```
+
+6. Configure dbt profiles and environment variables:
+
+```bash
+# Point DBT_PROFILES_DIR to the yfinance_dbt directory
+export DBT_PROFILES_DIR="$PWD/yfinance_dbt"
+echo 'export DBT_PROFILES_DIR="$PWD/yfinance_dbt"' >> ~/.bashrc
+```
+
+7. Update the DAG to use the dbt executable path (example variables in `airflow_home/dags/yfinance_orchestrator.py`):
+
+```python
+DBT_PROJECT_DIR = "/home/you/projects/finance-data-engineering/yfinance_dbt"
+DBT_VENV_EXECUTABLE = "/home/you/projects/finance-data-engineering/.venv_dbt/bin/dbt"
+DBT_PROFILES_DIR = "/home/you/projects/finance-data-engineering/yfinance_dbt"
+```
+
+The DAG invokes dbt by calling the full `DBT_VENV_EXECUTABLE` path, so Airflow will run the dbt binary directly (no `source` needed inside the DAG).
+
+8. Test the dbt command used by the DAG (run from any shell):
+
+```bash
+"/home/you/projects/finance-data-engineering/.venv_dbt/bin/dbt" run --select silver_layer \
+  --project-dir "/home/you/projects/finance-data-engineering/yfinance_dbt" \
+  --profiles-dir "/home/you/projects/finance-data-engineering/yfinance_dbt"
+```
+
+9. Add venvs and build artifacts to `.gitignore`:
+
+```bash
+echo ".venv*/" >> .gitignore
+echo "airflow_home/logs/" >> .gitignore
+echo "target/" >> .gitignore
+echo "dbt_packages/" >> .gitignore
+git add .gitignore && git commit -m "Add venv and build artifacts to .gitignore"
+```
+
+Notes:
+- Keep Snowflake secrets out of `profiles.yml` in source control; use env vars or a secrets manager where possible.
+- For local development `airflow standalone` is a convenient shortcut, but running `webserver` and `scheduler` separately gives more control and keeps venv activation explicit.
+- If you want, I can update `airflow_home/dags/yfinance_orchestrator.py` to read the three DBT variables from environment variables and fall back to defaults.
 
 ### Installation
 
@@ -137,13 +248,15 @@ c:\Personal\Finance Data Engineering Project\
    ```
 
 3. **Configure Snowflake connection**
-   - Update `yfinance_dbt/profiles.yml` with your Snowflake credentials
-   - Run initialization scripts:
-     ```bash
-     snowflake_scripts/Snowflake_db_init.sql
-     snowflake_scripts/snowflake_dbt_init.sql
-     snowflake_scripts/snowflake_airflow_init.sql
-     ```
+    - Update `yfinance_dbt/profiles.yml` with your Snowflake credentials
+    - Run initialization scripts **inside Snowflake**. These are SQL files meant to be executed in the Snowflake environment (use Snowflake Web UI Worksheets or the `snowsql` CLI). They are not runnable directly in VS Code.
+       - Example: open a new Worksheet in the Snowflake web UI, paste the SQL from `scripts/snowflake_scripts/Snowflake_db_init.sql`, and execute.
+       - Or use SnowSQL:
+          ```bash
+          snowsql -a <account> -u <user> -f scripts/snowflake_scripts/Snowflake_db_init.sql
+          snowsql -a <account> -u <user> -f scripts/snowflake_scripts/snowflake_dbt_init.sql
+          snowsql -a <account> -u <user> -f scripts/snowflake_scripts/snowflake_airflow_init.sql
+          ```
 
 4. **Initialize Airflow**
    ```bash
