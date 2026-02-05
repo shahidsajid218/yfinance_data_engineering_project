@@ -1,0 +1,22 @@
+-- Create Role and User
+USE ROLE USERADMIN;
+CREATE ROLE IF NOT EXISTS DBT_TRANSFORMER;
+CREATE USER IF NOT EXISTS dbt_user PASSWORD = '12345' DEFAULT_ROLE = DBT_TRANSFORMER;
+
+-- Grant permissions
+USE ROLE SECURITYADMIN;
+GRANT ROLE DBT_TRANSFORMER TO USER dbt_user;
+GRANT USAGE ON WAREHOUSE compute_wh TO ROLE DBT_TRANSFORMER;
+GRANT USAGE ON DATABASE yfinance_db TO ROLE DBT_TRANSFORMER;
+
+-- Silver/Gold access
+GRANT USAGE ON SCHEMA yfinance_db.bronze TO ROLE DBT_TRANSFORMER;
+GRANT SELECT ON ALL TABLES IN SCHEMA yfinance_db.bronze TO ROLE DBT_TRANSFORMER;
+GRANT CREATE SCHEMA ON DATABASE yfinance_db TO ROLE DBT_TRANSFORMER;
+
+-- 1. Switch to a role that can manage users
+USE ROLE SECURITYADMIN;
+
+-- 2. Grant the new role to YOUR user account
+-- Replace 'YOUR_USERNAME' with the name you use to log in to Snowflake
+GRANT ROLE DBT_TRANSFORMER TO USER "--your_snowflake_username--";
