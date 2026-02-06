@@ -56,6 +56,12 @@ The pipeline is synchronized with NYSE trading hours (14:30 - 21:00 GMT, Monday-
                                         [Power BI Dashboard]
 
 
+
+
+
+                                        
+
+
 <img width="1536" height="1024" alt="project archiectecture" src="https://github.com/user-attachments/assets/97a4e806-3d24-4a61-bc7f-bfd8f69e3aeb" />
 
 
@@ -85,7 +91,7 @@ The pipeline is synchronized with NYSE trading hours (14:30 - 21:00 GMT, Monday-
 ## 📁 Project Structure
 
 ```
-c:\Personal\Finance Data Engineering Project\
+
 ├── README.md                          # This file
 ├── dbt_project.yml                    # dbt project configuration
 ├── pyproject.toml                     # Python project metadata
