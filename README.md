@@ -154,7 +154,7 @@ Follow these copy-paste steps inside WSL (adjust paths and usernames):
 
 ```bash
 mkdir -p ~/projects
-cp -r /mnt/c/Personal/Finance\ Data\ Engineering\ Project ~/projects/finance-data-engineering
+cp -r --your_project_directory ~/projects/finance-data-engineering
 cd ~/projects/finance-data-engineering
 ```
 
@@ -250,7 +250,7 @@ Notes:
 
 1. **Clone/navigate to the project**
    ```bash
-   cd "c:\Personal\Finance Data Engineering Project"
+   cd ""your-project-directory"\Finance Data Engineering Project"
    ```
 
 2. **Set up Python environment**
@@ -406,13 +406,7 @@ dbt docs serve  # View at http://localhost:8000
 - [Snowflake Documentation](https://docs.snowflake.com/)
 - [yfinance Documentation](https://github.com/ranaroussi/yfinance)
 
-## 📞 Support & Contribution
 
-For issues or improvements, refer to the specific component documentation or check logs in:
-- `airflow_home/logs/` - Airflow execution logs
-- `yfinance_dbt/target/` - dbt run artifacts
-
-## 📄 License
 
 
 
